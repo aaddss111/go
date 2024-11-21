@@ -1,0 +1,93 @@
+1)
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+var (
+    counter int
+    mutex   sync.Mutex
+)
+
+func increment() {
+    mutex.Lock()
+    counter++
+    mutex.Unlock()
+}
+
+func main() {
+    var wg sync.WaitGroup
+    wg.Add(5)
+
+    for i := 0; i < 5; i++ {
+        go func() {
+            defer wg.Done()
+            increment()
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println("Final counter value:", counter)
+}
+
+2)
+package main
+
+import (
+    "fmt"
+    "strconv"
+)
+
+func main() {
+    numChannel := make(chan int)
+    strChannel := make(chan string)
+
+    go func() {
+        for i := 0; i < 10; i++ {
+            numChannel <- i
+        }
+        close(numChannel)
+    }()
+
+    for i := 0; i < 10; i++ {
+        go func() {
+            for num := range numChannel {
+                strChannel <- strconv.Itoa(num)
+            }
+        }()
+    }
+
+    for i := 0; i < 10; i++ {
+        str := <-strChannel
+        fmt.Println(str)
+    }
+}
+
+3)
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    var ch1 = make(chan struct{})
+    var ch2 = make(chan struct{})
+
+    go func() {
+        fmt.Println("Goroutine 1: waiting for Goroutine 2")
+        <-ch2 
+        fmt.Println("Goroutine 1: received from Goroutine 2")
+    }()
+
+    go func() {
+        fmt.Println("Goroutine 2: waiting for Goroutine 1")
+        <-ch1 
+        fmt.Println("Goroutine 2: received from Goroutine 1")
+    }()
+
+    time.Sleep(time.Second)
+}
